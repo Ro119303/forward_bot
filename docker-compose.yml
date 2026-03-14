@@ -1,0 +1,10 @@
+services:
+  bot-forward:
+    build: .
+    env_file: .env
+    volumes:
+      - bot_data_forward:/app/data
+    restart: unless-stopped
+
+volumes:
+  bot_data:
