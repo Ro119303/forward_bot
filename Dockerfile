@@ -1,11 +1,11 @@
 FROM python:3.12-slim
 
-WORKDIR /app
-RUN mkdir -p data
+RUN apt update && apt install -y sqlite3
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+RUN pip --default-timeout=600 install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
+COPY . /app
+WORKDIR /app
 CMD ["python", "bot.py"]
