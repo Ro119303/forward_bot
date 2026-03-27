@@ -100,7 +100,7 @@ def _startup_bot_check() -> telebot.types.User:
     for attempt in range(1, STARTUP_CHECK_RETRIES + 1):
         try:
             _test_proxy_transport()
-            return bot.get_me(timeout=apihelper.READ_TIMEOUT)
+            return bot.get_me()
         except Exception as err:
             last_err = err
             print(f"⚠️ Попытка {attempt}/{STARTUP_CHECK_RETRIES} не удалась: {err}")
