@@ -1,6 +1,9 @@
 FROM python:3.12-slim
 
-RUN apt update && apt install -y sqlite3
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+RUN apt update && apt install -y sqlite3 && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 
@@ -8,4 +11,4 @@ RUN pip --default-timeout=600 install --no-cache-dir -r requirements.txt -i http
 
 COPY . /app
 WORKDIR /app
-CMD ["python", "bot.py"]
+CMD ["python", "-u", "bot.py"]

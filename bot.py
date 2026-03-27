@@ -26,6 +26,7 @@ DB_PATH = Path(os.getenv("DB_PATH", "forwards.db"))
 STARTUP_CHECK_RETRIES = int(os.getenv("STARTUP_CHECK_RETRIES", "5"))
 STARTUP_BACKOFF_SECONDS = float(os.getenv("STARTUP_BACKOFF_SECONDS", "2"))
 ALLOW_DIRECT_FALLBACK = os.getenv("ALLOW_DIRECT_FALLBACK", "0") == "1"
+PREFER_SOCKS5H = os.getenv("PREFER_SOCKS5H", "1") == "1"
 
 # Network settings for unstable connections/proxies.
 apihelper.CONNECT_TIMEOUT = int(os.getenv("CONNECT_TIMEOUT", "30"))
@@ -57,24 +58,35 @@ def _validate_proxy_url(raw_url: str) -> None:
         raise ValueError("В PROXY_URL обязателен user:password")
 
 
-def _build_requests_proxies() -> Optional[Dict[str, str]]:
-    if not PROXY_URL:
+def _normalize_proxy_url(raw_url: str) -> str:
+    # socks5h resolves DNS via proxy and is usually more stable in containers.
+    if PREFER_SOCKS5H and raw_url.startswith("socks5://"):
+        return "socks5h://" + raw_url[len("socks5://"):]
+    return raw_url
+
+
+def _build_requests_proxies(proxy_url: Optional[str]) -> Optional[Dict[str, str]]:
+    if not proxy_url:
         return None
-    return {"http": PROXY_URL, "https": PROXY_URL}
+    return {"http": proxy_url, "https": proxy_url}
 
 
 def _configure_proxy() -> None:
     if PROXY_URL:
-        _validate_proxy_url(PROXY_URL)
-        apihelper.proxy = {"https": PROXY_URL, "http": PROXY_URL}
-        print(f"🌐 Прокси включен: {_mask_proxy_url(PROXY_URL)}")
+        normalized_proxy_url = _normalize_proxy_url(PROXY_URL)
+        _validate_proxy_url(normalized_proxy_url)
+        apihelper.proxy = {"https": normalized_proxy_url, "http": normalized_proxy_url}
+        print(f"🌐 Прокси включен: {_mask_proxy_url(normalized_proxy_url)}")
     else:
         apihelper.proxy = None
         print("🌐 Прокси отключен, прямое подключение")
 
 
 def _test_proxy_transport() -> None:
-    proxies = _build_requests_proxies()
+    active_proxy = None
+    if apihelper.proxy and isinstance(apihelper.proxy, dict):
+        active_proxy = apihelper.proxy.get("https") or apihelper.proxy.get("http")
+    proxies = _build_requests_proxies(active_proxy)
     response = requests.get(
         "https://api.telegram.org",
         timeout=(apihelper.CONNECT_TIMEOUT, apihelper.READ_TIMEOUT),
