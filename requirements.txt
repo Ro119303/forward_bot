@@ -3,3 +3,4 @@ aiosqlite==0.20.0
 aiohttp-socks
 pyTelegramBotAPI
 PySocks
+requests[socks]
