@@ -1,4 +1,5 @@
 import telebot
+import telebot.apihelper as apihelper
 import aiosqlite
 import logging
 import requests
@@ -26,7 +27,11 @@ SEND_MESSAGE_NEXT_BEARER = os.getenv(
     "d!3$g7^H&k9zF+Yw1LpQ@t*Ug&hsks7&8auIhsjO7#2hsjn27ijB*bi29bjTCU!HVb$%ip9&bwoubiw(lbn%^$oujkl",
 )
 
-telebot.apihelper.proxy = {'https': PROXY_URL, 'http': PROXY_URL}
+# Таймауты HTTP к api.telegram.org (через PROXY_URL); не путать с fallback requests без прокси.
+apihelper.READ_TIMEOUT = int(os.getenv("TELEGRAM_READ_TIMEOUT", "90"))
+apihelper.CONNECT_TIMEOUT = int(os.getenv("TELEGRAM_CONNECT_TIMEOUT", "30"))
+
+apihelper.proxy = {"https": PROXY_URL, "http": PROXY_URL}
 bot = telebot.TeleBot(BOT_TOKEN)
 
 print("🔄 Тест getMe...")
